@@ -1,0 +1,95 @@
+from lxml import html
+import requests
+import csv
+
+def get_content(url):
+    '''
+    Takes in url and returns clean HTML object.
+    :param url: url
+    :return: HTML Tree
+    '''
+    res = requests.get(url)
+    tree = html.fromstring(res.content)
+    return tree
+
+def get_data(data):
+    '''
+    Takes in HTML Tree & returns various fields as per requirement, uses XPath for each field.
+    :param data: HTML Tree
+    :return: list of required fields
+    '''
+    title = data.xpath('//meta[@property="og:title"]/@content')
+    title = title[0]
+    author = data.xpath('//span[@class="byline-author"]/text()')
+    author = author[0]
+    section = data.xpath('//meta[@property="article:section"]/@content')
+    section = section[0]
+    date = data.xpath('//meta[@property="article:published"]/@content')
+    date = date[0]
+
+    # data_dict = {'Title':title, 'Date':date, 'Author':author, 'Section':section}
+
+    data_list = [title,date,author,section]
+    return data_list
+
+    # return data_dict
+
+def get_text(data):
+    '''
+    Takes in HTML Tree and returns text content in a list, uses XPath to extract text content
+    :param data: HTML Tree
+    :return: list of text content
+    '''
+    text = data.xpath('//p[@class="story-body-text story-content"]/text()')
+    # text_keys = ['Text_' + str(a) for a in range(0, len(text))]
+    # tmp = zip(text_keys,text)
+    # text_dict = {k:v for k,v in tmp}
+
+    return text
+
+    # return text_dict
+
+def combo_data(first,sec):
+    '''
+    Takes two lists from previous functions and concatenates them.
+    :param first: list of fields
+    :param sec: list of text content
+    :return: combined list of data
+    '''
+    # final_dict = dict(first, **sec)
+    final_list = first+sec
+    return final_list
+
+    # return final_dict
+
+def write_to_file(lst):
+    '''
+    Takes the final combined list as input and writes it to a csv file.
+    :param lst: combined list
+    :return: csv file with data
+    '''
+    with open('filename.csv','a',newline='',encoding='utf-8') as f:
+        wr = csv.writer(f,dialect='excel')
+        wr.writerow(lst)
+
+if __name__ == '__main__':
+    '''
+    input all the urls to below list OR read lines of urls from a file, here we're using a list.
+    
+    And in for loop we're using exception handling to avoid urls which are not articles. Only
+    urls with article content in them will be extracted and written to a csv file.
+    '''
+    urls=[]
+    for l in urls:
+        try:
+            tree = get_content(l)
+            first = get_data(tree)
+            second = get_text(tree)
+            final = combo_data(first,second)
+            write_to_file(final)
+            print(final)
+
+        except:
+            print('Not an article')
+
+
